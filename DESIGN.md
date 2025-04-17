@@ -1,97 +1,116 @@
-# Aerofly FS4 to IGC Recorder - Architecture Design
+# Aerofly FS4 IGC Recorder - Design Document
 
-## Overview
-This document describes the architecture of the Aerofly FS4 to IGC Recorder software, a program that connects the Aerofly FS4 flight simulator with an IGC file recording system to register simulated flights.
+## Architecture Overview
 
-## Layered Architecture
-The application is organized following a layered architecture that clearly separates concerns:
+The Aerofly FS4 IGC Recorder follows a modular, layered architecture based on the Model-View-Controller (MVC) pattern, with some adaptations for an event-driven system. The application is designed to be maintainable, extensible, and to provide both GUI and CLI interfaces.
 
-### Data Layer
-- Definition of data models and structures
-- Conversion between different data formats
-- Data validation
+## Architectural Layers
 
-### I/O Layer
-- Communication with external sources (UDP, files)
-- Abstraction over specific protocols
-- Handling of connection and format errors
+### 1. Data Layer (Model)
 
-### Business Logic Layer
-- Flight data processing
-- IGC record generation
-- Coordinating data flows between components
+**Location**: `app/data/`
 
-### Presentation Layer
-- User interfaces (GUI and CLI)
-- Data and state presentation
-- User event handling
+This layer contains the data models and parsers that represent the core data structures used throughout the application:
 
-## Directory Structure
-aerofly-igc-recorder/
-├── app/                    # Main application code
+- **Data Models** (`models.py`): Defines classes for different types of flight data:
+  - `XGPSData`: Position data (latitude, longitude, altitude, etc.)
+  - `XATTData`: Attitude data (heading, pitch, roll)
+  - `UnknownData`: Fallback for unparsed data
 
-│   ├── config/             # Centralized configuration
+- **Data Parsers** (`parser.py`): Converts raw input data to typed objects:
+  - `ForeFlightParser`: Parses ForeFlight-compatible data from Aerofly FS4
 
-│   ├── core/               # Core application logic
+### 2. I/O Layer
 
-│   ├── data/               # Data models and parsers
+**Location**: `app/io/`
 
-│   ├── io/                 # Input/output (UDP, files)
+Handles all input/output operations:
 
-│   ├── ui/                 # User interfaces
+- **UDP Receiver** (`udp.py`): Listens for UDP packets from Aerofly FS4
+- **IGC Writer** (`igc.py`): Handles writing flight data to IGC files
+- **File Management** (`files.py`): Handles file operations, directory creation, etc.
 
-│   └── utils/              # Common utilities
+### 3. Core Layer (Controller)
 
-├── tests/                  # Unit and integration tests
+**Location**: `app/core/`
 
-└── main.py                 # Main entry point
+Contains the main business logic:
 
-## Main Components
+- **IGC Recorder** (`recorder.py`): Records flight data to IGC files
+- **Bridge** (`bridge.py`): Orchestrates the communication between UDP server and IGC recorder
+- **Flight Manager** (`flight.py`): Manages flight sessions and related metadata
 
-### app/config/
-Centralizes application configuration, allowing customization without modifying code.
-- `settings.py` - Configurable values with defaults
-- `constants.py` - Constants used throughout the application
+### 4. UI Layer (View)
 
-### app/data/
-Contains the representation of data within the application.
-- `models.py` - Dataclasses representing the main entities
-- `parsers.py` - Converters between external and internal formats
+**Location**: `app/ui/`
 
-### app/io/
-Handles communication with external systems.
-- `udp_server.py` - UDP server to receive ForeFlight data
-- `file_manager.py` - IGC file management
+Provides user interfaces:
 
-### app/core/
-Implements the main application logic.
-- `recorder.py` - Flight data recording to IGC format
-- `bridge.py` - Orchestration between components
+- **GUI** (`gui.py`): Tkinter-based graphical user interface
+- **CLI** (`cli.py`): Command-line interface
 
-### app/ui/
-User interfaces and presentation.
-- `gui.py` - Graphical interface based on tkinter
-- `cli.py` - Command-line interface
+### 5. Utility Layer
 
-### app/utils/
-Common utilities used across different components.
-- `events.py` - Inter-component event system
-- `converters.py` - Unit conversions and formatting
-- `logging.py` - Centralized logging system
+**Location**: `app/utils/`
 
-## Design Patterns
+Provides common utilities:
 
-### Observer Pattern
-Used for communication between components, especially for updating the UI when data changes.
+- **Event System** (`events.py`): Observer pattern implementation for component communication
+- **Logging** (`logging.py`): Centralized logging functionality
+- **Conversion Utilities** (`conversion.py`): Unit conversion helpers
 
-### Dependency Injection
-Components receive their dependencies instead of creating them directly, facilitating testing and flexibility.
+### 6. Configuration Layer
 
-### Facade Pattern
-`AeroflyToIGCBridge` acts as a facade, providing a simplified API over the internal complexity.
+**Location**: `app/config/`
 
-## Future Extension System
-A plugin system is planned to allow:
-- Support for different flight simulators
-- Additional output formats
-- Custom visualizations
+Centralizes application configuration:
+
+- **Constants** (`constants.py`): System-wide constants
+- **Settings** (`settings.py`): User-configurable settings
+
+## Communication Flow
+
+1. UDP data is received from Aerofly FS4 via `ForeFlightUDPServer`
+2. Data is parsed by `ForeFlightParser` into typed objects
+3. An event is published via `EventBus` notifying of new data
+4. `IGCRecorder` subscribes to these events and records data to IGC files
+5. UI components (GUI/CLI) display status and allow user control
+
+## Event-Driven Communication
+
+The application uses an event bus to facilitate loose coupling between components:
+
+1. Components subscribe to events they are interested in
+2. When an event occurs, the event bus notifies all subscribers
+3. Subscribers react to events independently
+
+This pattern allows components to be added, removed, or modified without affecting other parts of the system.
+
+## Error Handling Strategy
+
+1. **Defensive Programming**: Each component validates its inputs
+2. **Centralized Logging**: All errors are logged with appropriate context
+3. **Graceful Degradation**: Components attempt to continue functioning when possible
+4. **User Feedback**: Errors relevant to the user experience are displayed in the UI
+
+## Testing Strategy
+
+1. **Unit Tests**: Test individual components in isolation
+2. **Integration Tests**: Test interactions between components
+3. **End-to-End Tests**: Test full application workflows
+
+## Future Considerations
+
+1. **Plugin Architecture**: Allow extending functionality via plugins
+2. **Web Interface**: Add a web-based UI option
+3. **Flight Analysis**: Add basic flight analysis capabilities
+4. **Multiple Simulator Support**: Support additional flight simulators
+5. **Cloud Integration**: Upload IGC files to cloud services
+
+## Design Patterns Used
+
+1. **Singleton**: Used for global services (EventBus, Settings)
+2. **Observer**: Used for event-based communication
+3. **Factory**: Used for creating data objects
+4. **MVC**: Overall architectural pattern
+5. **Repository**: Used for data access abstraction
