@@ -3,4 +3,12 @@ UI package for Aerofly FS4 IGC Recorder.
 Contains GUI and CLI interfaces for the application.
 """
 
-# This will be populated as the UI components are implemented
+from .gui import GUI, create_gui
+from .cli import CLI, create_cli
+
+__all__ = [
+    'GUI',
+    'create_gui',
+    'CLI',
+    'create_cli'
+]
