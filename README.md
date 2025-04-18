@@ -2,6 +2,8 @@
 
 Connect Aerofly FS4 Flight Simulator and generate IGC flight logs.
 
+Developed by Claude Sonnet 3.7.
+
 ## Overview
 
 Aerofly FS4 IGC Recorder is a Python application that captures flight data from the Aerofly FS4 flight simulator and records it in the IGC (International Gliding Commission) file format. This allows pilots to analyze their simulated flights with standard IGC-compatible flight analysis tools.
