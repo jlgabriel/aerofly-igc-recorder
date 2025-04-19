@@ -341,7 +341,7 @@ class GUI:
         row += 1
 
         # Fix count
-        ttk.Label(info_frame, text="Fixes:").grid(row=row, column=0, sticky="w", padx=5, pady=2)
+        ttk.Label(info_frame, text="Fixes (Tracking Points):").grid(row=row, column=0, sticky="w", padx=5, pady=2)
         ttk.Label(
             info_frame,
             textvariable=self.tk_vars['fix_count']
