@@ -1,8 +1,8 @@
 # Aerofly FS4 IGC Recorder
 
-Connect Aerofly FS4 Flight Simulator and generate IGC flight logs.
+Connect Aerofly FS4 Flight Simulator (Copyright (C) IPACS) and generate IGC flight logs.
 
-Developed by Claude Sonnet 3.7.
+Coded by Anthropic Claude Sonnet 3.7.
 
 ## Overview
 
@@ -80,7 +80,7 @@ python main.py --port 49002 --output-dir ~/Documents/AeroflyIGC --log-level DEBU
 1. Start Aerofly FS4
 2. Configuration in Aerofly FS4 "Miscellaneous settings":
 - "Broadcast flight info to IP address" must be set ON
-- "Broadcast IP Address" must target to your local network address ending in 255: "xxx.xxx.xxx.255" , for example 192.168.1.255 (default)
+- Configure the Broadcast IP Address to your subnet's directed broadcast address, typically in the format 'xxx.xxx.xxx.255' for standard /24 networks (e.g., 192.168.1.255)
 - "Broadcast IP Port" must be set us "49002" (default)
 3. Make sure your firewall allows UDP on port 49002
 
