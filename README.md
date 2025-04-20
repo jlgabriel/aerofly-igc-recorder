@@ -78,7 +78,10 @@ python main.py --port 49002 --output-dir ~/Documents/AeroflyIGC --log-level DEBU
 ## Setup in Aerofly FS4
 
 1. Start Aerofly FS4
-2. Enable "Output data to ForeFlight" in settings
+2. Configuration in Aerofly FS4 "Miscellaneous settings":
+- "Broadcast flight info to IP address" must be set ON
+- "Broadcast IP Address" must target to your local network address ending in 255: "xxx.xxx.xxx.255" , for example 192.168.1.255 (default)
+- "Broadcast IP Port" must be set us "49002" (default)
 3. Make sure your firewall allows UDP on port 49002
 
 ## IGC File Output
