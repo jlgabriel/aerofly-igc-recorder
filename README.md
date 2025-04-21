@@ -115,4 +115,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - [Aerofly FS4](https://www.aerofly.com/) for the flight simulator
 - [aerofiles](https://github.com/Turbo87/aerofiles) library for IGC file handling
+- [UDP Protocol](https://support.foreflight.com/hc/en-us/articles/204115005-Flight-Simulator-GPS-Integration-UDP-Protocol) Flight Simulator GPS Integration (UDP Protocol)
 - Original development by Juan Luis Gabriel
