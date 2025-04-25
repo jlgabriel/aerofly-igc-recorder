@@ -834,6 +834,9 @@ class GUI:
             logger.info("Application cleanup completed")
         except Exception as e:
             logger.error(f"Error during cleanup: {e}")
+            # Ensure we still destroy the window even if cleanup fails
+            if hasattr(self, 'root'):
+                self.root.after(0, self.root.destroy)
 
     def _on_close(self) -> None:
         """Handle the window close event."""
@@ -850,11 +853,12 @@ class GUI:
         # Set running flag to false
         self.running = False
 
-        # Destroy the root window
-        if hasattr(self, 'root') and self.root:
-            self.root.destroy()
+        # Stop the async loop first
+        if hasattr(self, 'async_loop'):
+            self.async_loop.stop()
 
-        logger.info("Application closed by user")
+        # Then destroy the window
+        self.root.destroy()
 
     async def _subscribe_to_events(self) -> None:
         """Subscribe to events from the event bus."""
