@@ -7,13 +7,15 @@ import logging
 import asyncio
 from typing import Optional, Dict, Any, Union, List, Tuple
 import time
+import datetime
 
 from ..data.parser import ForeFlightParser, parser as default_parser
 from ..io.udp import UDPServer, create_udp_server
-from ..io.igc import IGCWriter
+from ..io.igc import IGCWriter, create_igc_writer
 from .recorder import FlightRecorder, create_flight_recorder
 from ..utils.events import EventType, Event, event_bus, publish_event
 from ..config.settings import settings
+from ..data.models import XGPSData, XATTData, ForeFlightData, DataType
 
 # Configure logger
 logger = logging.getLogger("aerofly_igc_recorder.core.bridge")
@@ -27,13 +29,17 @@ class AeroflyBridge:
 
     def __init__(self,
                  parser: Optional[ForeFlightParser] = None,
-                 udp_port: Optional[int] = None):
+                 udp_port: Optional[int] = None,
+                 udp_server: Optional[UDPServer] = None,
+                 igc_writer: Optional[IGCWriter] = None):
         """
         Initialize the Aerofly bridge.
 
         Args:
             parser: Optional parser instance (uses default if None)
             udp_port: Optional UDP port (uses settings if None)
+            udp_server: Optional UDP server instance (creates one if None)
+            igc_writer: Optional IGC writer instance (creates one if None)
         """
         # Use default parser if none provided
         self.parser = parser or default_parser
@@ -42,12 +48,18 @@ class AeroflyBridge:
         self.udp_port = udp_port or settings.get('udp_port')
 
         # Create components
-        self.udp_server = create_udp_server(self.parser, self.udp_port)
+        self.udp_server = udp_server or create_udp_server(self.parser, self.udp_port)
+        self.igc_writer = igc_writer or create_igc_writer()
         self.flight_recorder = create_flight_recorder()
 
         # State tracking
         self.running = False
         self.event_tasks = []
+
+        # Last received data
+        self.last_gps_data: Optional[XGPSData] = None
+        self.last_att_data: Optional[XATTData] = None
+        self.last_data_time = 0
 
         logger.info(f"Aerofly Bridge initialized with UDP port {self.udp_port}")
 
@@ -196,27 +208,47 @@ class AeroflyBridge:
     async def start_recording(self,
                               pilot_name: str = "",
                               glider_type: str = "",
-                              glider_id: str = "") -> Union[str, None]:
+                              glider_id: str = "",
+                              glider_info: Optional[Dict[str, Any]] = None) -> bool:
         """
-        Start recording a flight.
+        Start recording flight data.
 
         Args:
             pilot_name: Name of the pilot
             glider_type: Type of glider/aircraft
             glider_id: Registration or ID of the glider
+            glider_info: Additional glider information
 
         Returns:
-            Union[str, None]: Path to the IGC file if successful, None otherwise
+            bool: True if recording started successfully, False otherwise
         """
         if not self.running:
             logger.warning("Aerofly Bridge not running")
-            return None
+            return False
 
-        return await self.flight_recorder.start_recording(
-            pilot_name=pilot_name,
-            glider_type=glider_type,
-            glider_id=glider_id
-        )
+        # Check if already recording using the recorder's status
+        if self.get_recording_status().get('recording', {}).get('recording', False):
+            logger.warning("Already recording")
+            return False
+
+        try:
+            # Start recording through the flight recorder
+            filename = await self.flight_recorder.start_recording(
+                pilot_name=pilot_name,
+                glider_type=glider_type,
+                glider_id=glider_id,
+                glider_info=glider_info
+            )
+
+            if filename:
+                logger.info(f"Started recording to {filename}")
+                return True
+
+            return False
+
+        except Exception as e:
+            logger.error(f"Error starting recording: {e}")
+            return False
 
     async def stop_recording(self) -> Union[str, None]:
         """

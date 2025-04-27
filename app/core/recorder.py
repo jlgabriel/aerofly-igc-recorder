@@ -146,7 +146,18 @@ class FlightRecorder:
                 self._handle_data_event
             )
             
-            logger.debug("Subscribed to DATA_RECEIVED events")
+            # Subscribe to recording events to ensure proper state tracking
+            await event_bus.subscribe(
+                EventType.RECORDING_STARTED,
+                self._handle_recording_started
+            )
+            
+            await event_bus.subscribe(
+                EventType.RECORDING_STOPPED,
+                self._handle_recording_stopped
+            )
+            
+            logger.debug("Subscribed to flight recorder events")
             
         except Exception as e:
             logger.error(f"Error subscribing to events: {e}")
@@ -215,6 +226,22 @@ class FlightRecorder:
         except Exception as e:
             logger.error(f"Error handling data event: {e}")
 
+    async def _handle_recording_started(self, event: Event) -> None:
+        """Handle recording started event."""
+        if not event.data:
+            return
+            
+        # Reset recording state
+        self.last_record_time = 0
+        logger.debug("Recording started event received")
+
+    async def _handle_recording_stopped(self, event: Event) -> None:
+        """Handle recording stopped event."""
+        if not event.data:
+            return
+            
+        logger.debug("Recording stopped event received")
+
     async def _queue_position(self, gps_data: XGPSData, att_data: Optional[XATTData] = None) -> None:
         """
         Queue a position for recording with rate limiting.
@@ -262,7 +289,8 @@ class FlightRecorder:
     async def start_recording(self, 
                         pilot_name: str = "", 
                         glider_type: str = "", 
-                        glider_id: str = "") -> Union[str, None]:
+                        glider_id: str = "",
+                        glider_info: Optional[Dict[str, Any]] = None) -> Union[str, None]:
         """
         Start recording a flight.
         
@@ -270,6 +298,7 @@ class FlightRecorder:
             pilot_name: Name of the pilot
             glider_type: Type of glider/aircraft
             glider_id: Registration or ID of the glider
+            glider_info: Additional glider information for IGC file
             
         Returns:
             Union[str, None]: Path to the IGC file if successful, None otherwise
@@ -282,15 +311,25 @@ class FlightRecorder:
             logger.warning("Already recording")
             return None
             
+        logger.info(f"Starting recording with pilot: {pilot_name}, glider: {glider_type}, id: {glider_id}")
+        
         # Reset last record time
         self.last_record_time = 0
         
         # Start recording
-        return await self.igc_writer.start_recording(
+        filename = await self.igc_writer.start_recording(
             pilot_name=pilot_name,
             glider_type=glider_type,
-            glider_id=glider_id
+            glider_id=glider_id,
+            glider_info=glider_info
         )
+
+        if filename:
+            logger.info(f"Recording started successfully to {filename}")
+        else:
+            logger.error("Failed to start recording - no filename returned")
+
+        return filename
 
     async def stop_recording(self) -> Union[str, None]:
         """

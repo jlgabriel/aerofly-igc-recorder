@@ -23,6 +23,7 @@ from ..config.constants import (
 )
 from ..config.settings import settings
 from ..io.files import open_file_or_directory, get_igc_directory, list_igc_files
+from .glider_tab import GliderTab
 
 # Configure logger
 logger = logging.getLogger("aerofly_igc_recorder.ui.gui")
@@ -232,6 +233,7 @@ class GUI:
 
         # Create tabs
         self._create_main_tab(notebook)
+        self._create_glider_tab(notebook)
         self._create_settings_tab(notebook)
         self._create_files_tab(notebook)
         self._create_about_tab(notebook)
@@ -467,6 +469,28 @@ class GUI:
             textvariable=self.tk_vars['glider_id'],
             width=30
         ).grid(row=row, column=1, sticky="ew", padx=5, pady=2)
+
+    def _create_glider_tab(self, notebook) -> None:
+        """Create the glider selection tab."""
+        glider_frame = ttk.Frame(notebook, padding="10")
+        notebook.add(glider_frame, text="Glider")
+
+        # Create glider tab component
+        self.components['glider_tab'] = GliderTab(
+            glider_frame,
+            on_glider_selected=self._on_glider_selected
+        )
+
+    def _on_glider_selected(self, glider_name: str) -> None:
+        """Handle glider selection."""
+        if glider_name:
+            # Get glider info
+            glider_info = self.components['glider_tab'].get_selected_glider_info()
+            
+            # Update recording fields
+            if glider_info:
+                self.tk_vars['glider_type'].set(f"{glider_info['manufacturer']} {glider_info['model']}")
+                self.tk_vars['glider_id'].set(glider_info['glider_id'])
 
     def _create_settings_tab(self, notebook) -> None:
         """Create the settings tab."""
@@ -727,7 +751,7 @@ class GUI:
         self.start_button = ttk.Button(
             control_frame,
             text="Start Recording",
-            command=self._start_recording
+            command=self._handle_start_recording
         )
         self.start_button.pack(side="left", padx=5)
         self.components['start_button'] = self.start_button
@@ -757,6 +781,31 @@ class GUI:
             command=self._on_close
         )
         self.exit_button.pack(side="right", padx=5)
+
+    def _handle_start_recording(self) -> None:
+        """Handle the start recording button click."""
+        # Disable the button immediately to prevent double clicks
+        self.start_button.configure(state="disabled")
+        
+        # Create and handle the async task
+        task = self.async_loop.create_task(self._start_recording())
+        
+        def handle_result(task: asyncio.Task) -> None:
+            try:
+                # Get the result (this will raise any exceptions that occurred)
+                task.result()
+            except Exception as e:
+                # Log the error
+                logger.error(f"Error in start recording task: {e}")
+                # Re-enable the button if there was an error
+                self.start_button.configure(state="normal")
+                # Show error to user
+                messagebox.showerror("Error", f"Failed to start recording: {str(e)}")
+        
+        # Add the callback to handle the result
+        task.add_done_callback(
+            lambda t: self.async_loop.call_soon_in_main_thread(handle_result, t)
+        )
 
     async def _start_application(self) -> None:
         """Start the application and initialize all components."""
@@ -1159,32 +1208,53 @@ class GUI:
                     f"Error in {component}:\n{message}"
                 )
 
-    def _start_recording(self) -> None:
-        """Start recording a flight."""
-        if not self.bridge:
+    async def _start_recording(self) -> None:
+        """Start recording flight data."""
+        if not self.bridge or not self.bridge.running:
+            messagebox.showerror(
+                "Error",
+                "Bridge is not running. Please check your connection settings."
+            )
             return
 
-        # Check if already recording
-        if self.bridge.get_recording_status().get('recording', {}).get('recording', False):
-            messagebox.showinfo("Already Recording", "A recording is already in progress")
-            return
+        try:
+            # Get recording parameters
+            pilot_name = self.tk_vars['pilot_name'].get()
+            glider_type = self.tk_vars['glider_type'].get()
+            glider_id = self.tk_vars['glider_id'].get()
 
-        # Get values from UI
-        pilot_name = self.tk_vars['pilot_name'].get()
-        glider_type = self.tk_vars['glider_type'].get()
-        glider_id = self.tk_vars['glider_id'].get()
+            # Get selected glider info for IGC file
+            glider_info = {}
+            if hasattr(self, 'components') and 'glider_tab' in self.components:
+                glider_info = self.components['glider_tab'].get_selected_glider_info()
 
-        # Start recording
-        self.async_loop.create_task(
-            self.bridge.start_recording(
+            # Start recording
+            if await self.bridge.start_recording(
                 pilot_name=pilot_name,
                 glider_type=glider_type,
-                glider_id=glider_id
+                glider_id=glider_id,
+                glider_info=glider_info  # Pass additional glider info
+            ):
+                # Update UI
+                self.start_button.configure(state="disabled")
+                self.stop_button.configure(state="normal")
+                
+                # Update status
+                self.tk_vars['status_message'].set("Recording started")
+                
+                logger.info("Recording started")
+            else:
+                messagebox.showerror(
+                    "Error",
+                    "Failed to start recording. Please check the logs for details."
+                )
+                
+        except Exception as e:
+            logger.error(f"Error starting recording: {e}")
+            messagebox.showerror(
+                "Error",
+                f"Error starting recording: {str(e)}"
             )
-        )
-
-        # Update status
-        self.tk_vars['status_message'].set("Starting recording...")
 
     def _stop_recording(self) -> None:
         """Stop recording the current flight."""
