@@ -12,8 +12,9 @@ Aerofly FS4 IGC Recorder is a Python application that captures flight data from 
 
 - Captures live flight data from Aerofly FS4 via UDP
 - Records flight data in standard IGC format
-- Provides both GUI and CLI interfaces
+- Modern and intuitive graphical user interface
 - Customizable settings for pilot name, glider type, etc.
+- Built-in glider configuration management
 - Automatic file naming and organization
 
 ## Requirements
@@ -21,7 +22,7 @@ Aerofly FS4 IGC Recorder is a Python application that captures flight data from 
 - Python 3.8 or higher
 - Aerofly FS4 with ForeFlight output enabled
 - Required Python packages:
-  - tkinter (for GUI mode)
+  - tkinter (for GUI)
   - aerofiles (for IGC file handling)
   - asyncio
 
@@ -40,40 +41,33 @@ Aerofly FS4 IGC Recorder is a Python application that captures flight data from 
 
 ## Usage
 
-### GUI Mode
-
 1. Start the application:
    ```
    python main.py
    ```
 
-2. Configure your pilot details
+2. Configure your pilot details and glider settings
 3. Click "Start Recording" to begin recording flight data
 4. Fly in Aerofly FS4
 5. Click "Stop Recording" when finished
-
-### CLI Mode
-
-1. Start the application in CLI mode:
-   ```
-   python main.py --cli
-   ```
-
-2. Use the following commands:
-   - `start` - Start recording
-   - `stop` - Stop recording
-   - `status` - Show connection status
-   - `exit` - Exit program
 
 ## Configuration
 
 The application settings can be found in `~/.config/aerofly-igc-recorder/settings.json` (Linux/Mac) or `%APPDATA%\AeroflyIGCRecorder\settings.json` (Windows).
 
-You can also specify settings via command-line arguments:
+You can specify settings via command-line arguments:
 
 ```
 python main.py --port 49002 --output-dir ~/Documents/AeroflyIGC --log-level DEBUG
 ```
+
+## Glider Configuration
+
+The application includes a built-in glider configuration manager that allows you to:
+- Add and manage custom glider profiles
+- Set glider-specific parameters like competition ID and class
+- Import/export glider configurations
+- Automatically use the correct glider settings for IGC files
 
 ## Setup in Aerofly FS4
 

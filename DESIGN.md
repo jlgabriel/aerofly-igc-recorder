@@ -2,7 +2,7 @@
 
 ## Architecture Overview
 
-The Aerofly FS4 IGC Recorder follows a modular, layered architecture based on the Model-View-Controller (MVC) pattern, with some adaptations for an event-driven system. The application is designed to be maintainable, extensible, and to provide both GUI and CLI interfaces.
+The Aerofly FS4 IGC Recorder follows a modular, layered architecture based on the Model-View-Controller (MVC) pattern, with some adaptations for an event-driven system. The application is designed to be maintainable, extensible, and provides a modern graphical user interface.
 
 ## Architectural Layers
 
@@ -12,9 +12,10 @@ The Aerofly FS4 IGC Recorder follows a modular, layered architecture based on th
 
 This layer contains the data models and parsers that represent the core data structures used throughout the application:
 
-- **Data Models** (`models.py`): Defines classes for different types of flight data:
+- **Data Models** (`models.py`): Defines classes for different types of data:
   - `XGPSData`: Position data (latitude, longitude, altitude, etc.)
   - `XATTData`: Attitude data (heading, pitch, roll)
+  - `GliderData`: Glider configuration data
   - `UnknownData`: Fallback for unparsed data
 
 - **Data Parsers** (`parser.py`): Converts raw input data to typed objects:
@@ -44,10 +45,11 @@ Contains the main business logic:
 
 **Location**: `app/ui/`
 
-Provides user interfaces:
+Provides the graphical user interface:
 
-- **GUI** (`gui.py`): Tkinter-based graphical user interface
-- **CLI** (`cli.py`): Command-line interface
+- **Main Window** (`gui.py`): Main application window and core UI functionality
+- **Glider Configuration** (`glider_tab.py`): Glider management interface
+- **Common Widgets** (`widgets.py`): Reusable UI components
 
 ### 5. Utility Layer
 
@@ -67,6 +69,7 @@ Centralizes application configuration:
 
 - **Constants** (`constants.py`): System-wide constants
 - **Settings** (`settings.py`): User-configurable settings
+- **Glider Module** (`gliders_module.py`): Glider configuration management
 
 ## Communication Flow
 
@@ -74,7 +77,7 @@ Centralizes application configuration:
 2. Data is parsed by `ForeFlightParser` into typed objects
 3. An event is published via `EventBus` notifying of new data
 4. `IGCRecorder` subscribes to these events and records data to IGC files
-5. UI components (GUI/CLI) display status and allow user control
+5. UI components display status and allow user control
 
 ## Event-Driven Communication
 
