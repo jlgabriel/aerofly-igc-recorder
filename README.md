@@ -63,11 +63,10 @@ python main.py --port 49002 --output-dir ~/Documents/AeroflyIGC --log-level DEBU
 
 ## Glider Configuration
 
-The application includes a built-in glider configuration manager that allows you to:
-- Add and manage custom glider profiles
-- Set glider-specific parameters like competition ID and class
-- Import/export glider configurations
-- Automatically use the correct glider settings for IGC files
+The application includes a glider selection system that allows you to:
+- Select from available glider models in Aerofly FS4
+- View detailed glider information and specifications
+- Automatically include the selected glider information in IGC files
 
 ## Setup in Aerofly FS4
 
