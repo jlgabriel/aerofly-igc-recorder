@@ -1,20 +1,21 @@
 """
 Aerofly FS4 IGC Recorder
-A tool to connect Aerofly FS4 Flight Simulator and generate IGC flight logs.
+Connects Aerofly FS4 Flight Simulator and generates IGC flight logs.
 
-This package contains modules for:
-- Receiving UDP data from Aerofly FS4
-- Parsing ForeFlight-compatible data formats
-- Recording flight data to IGC files
-- Providing both GUI and CLI interfaces
+Features:
+- Recording flight data from Aerofly FS4
+- Generating IGC files
+- Providing a GUI interface for easy operation
 """
+
+__version__ = '1.0.0'
+APP_NAME = 'Aerofly FS4 IGC Recorder'
 
 from . import config
 from . import data
 from . import utils
 from .config.constants import APP_NAME, APP_VERSION, APP_AUTHOR, APP_LICENSE
 
-__version__ = APP_VERSION
 __author__ = APP_AUTHOR
 __license__ = APP_LICENSE
 

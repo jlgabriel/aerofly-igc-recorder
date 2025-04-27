@@ -324,6 +324,17 @@ class AeroflyBridge:
 
         return status
 
+    async def run(self):
+        """
+        Run the bridge to receive and process UDP data.
+        """
+        try:
+            await self._setup_udp()
+            await self._receive_loop()
+        except Exception as e:
+            logger.error(f"Error in bridge: {e}")
+            raise
+
 
 # Factory function to create a bridge instance
 def create_bridge(parser: Optional[ForeFlightParser] = None, udp_port: Optional[int] = None) -> AeroflyBridge:

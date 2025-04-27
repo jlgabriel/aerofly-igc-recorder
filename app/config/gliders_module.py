@@ -2,7 +2,7 @@
 
 """
 This module defines the data of the different gliders available
-to be used in the Aerofly IGC recorder.
+in Aerofly FS4 to be used in the Aerofly IGC recorder.
 
 The information provided here is used both for display in the GUI
 and for inclusion in the generated IGC files.
@@ -91,35 +91,3 @@ def get_igc_glider_info(glider_name):
         "glider_id": glider["glider_id"],
         "competition_class": glider["competition_class"]
     }
-
-def add_custom_glider(name, manufacturer, model, wingspan, competition_class, igc_code, glider_id, description=""):
-    """
-    Adds a custom glider to the list of available gliders.
-    
-    Args:
-        name (str): Display name of the glider
-        manufacturer (str): Manufacturer of the glider
-        model (str): Model of the glider
-        wingspan (float): Wingspan in meters
-        competition_class (str): Competition class
-        igc_code (str): IGC code of the glider
-        glider_id (str): Glider ID
-        description (str, optional): Additional description
-        
-    Returns:
-        bool: True if added successfully, False if it already existed
-    """
-    if name in GLIDERS:
-        return False
-    
-    GLIDERS[name] = {
-        "manufacturer": manufacturer,
-        "model": model,
-        "wingspan": float(wingspan),
-        "competition_class": competition_class,
-        "igc_code": igc_code,
-        "glider_id": glider_id,
-        "description": description
-    }
-    
-    return True

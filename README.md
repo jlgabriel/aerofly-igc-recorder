@@ -2,7 +2,7 @@
 
 Connect Aerofly FS4 Flight Simulator (Copyright (C) IPACS) and generate IGC flight logs.
 
-Coded by Anthropic Claude Sonnet 3.7.
+Initially designed by Anthropic Claude Sonnet 3.7, with subsequent code improvements developed using Claude 3.5 Sonnet in Cursor IDE.
 
 ## Overview
 
@@ -53,13 +53,9 @@ Aerofly FS4 IGC Recorder is a Python application that captures flight data from 
 
 ## Configuration
 
-The application settings can be found in `~/.config/aerofly-igc-recorder/settings.json` (Linux/Mac) or `%APPDATA%\AeroflyIGCRecorder\settings.json` (Windows).
-
-You can specify settings via command-line arguments:
-
-```
-python main.py --port 49002 --output-dir ~/Documents/AeroflyIGC --log-level DEBUG
-```
+The application settings can be configured through the GUI and are stored in:
+- Windows: `%APPDATA%\AeroflyIGCRecorder\settings.json`
+- Linux/Mac: `~/.config/aerofly-igc-recorder/settings.json`
 
 ## Glider Configuration
 
