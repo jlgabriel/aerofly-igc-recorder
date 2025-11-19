@@ -13,9 +13,11 @@ import asyncio
 # Import aerofiles for IGC file handling
 try:
     from aerofiles.igc import Writer
+    AEROFILES_AVAILABLE = True
 except ImportError:
-    logging.error("aerofiles library not found. Please install with: pip install aerofiles")
-    raise
+    logging.warning("aerofiles library not found. IGC writing will not be available. Install with: pip install aerofiles")
+    Writer = None
+    AEROFILES_AVAILABLE = False
 
 from ..data.models import XGPSData, XATTData
 from ..config.constants import IGC_EXTENSION, IGC_MANUFACTURER_CODE, IGC_LOGGER_ID
