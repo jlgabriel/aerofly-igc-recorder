@@ -176,16 +176,16 @@ class TestUnknownData:
 
     def test_create_unknown_data(self):
         """Test creating UnknownData."""
-        data = UnknownData(raw_data="INVALID_LINE")
+        data = UnknownData(raw_line="INVALID_LINE")
 
-        assert data.raw_data == "INVALID_LINE"
+        assert data.raw_line == "INVALID_LINE"
         assert data.data_type == DataType.UNKNOWN
 
     def test_unknown_data_with_empty_string(self):
         """Test UnknownData with empty string."""
-        data = UnknownData(raw_data="")
+        data = UnknownData(raw_line="")
 
-        assert data.raw_data == ""
+        assert data.raw_line == ""
         assert data.data_type == DataType.UNKNOWN
 
 

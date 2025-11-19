@@ -20,7 +20,7 @@ class TestForeFlightParser:
         """Test parsing of valid XGPS data."""
         line = "XGPSAerofly FS 4,-122.345678,37.654321,123.45,45.67,89.12"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XGPSData)
         assert data.sim_name == "Aerofly FS 4"
@@ -36,7 +36,7 @@ class TestForeFlightParser:
         """Test parsing XGPS data with negative coordinates."""
         line = "XGPSSimulator,-10.5,-20.3,500.0,180.0,25.5"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XGPSData)
         assert abs(data.longitude - (-10.5)) < 0.000001
@@ -46,7 +46,7 @@ class TestForeFlightParser:
         """Test parsing XGPS data with zero values."""
         line = "XGPSSim,0.0,0.0,0.0,0.0,0.0"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XGPSData)
         assert data.longitude == 0.0
@@ -59,7 +59,7 @@ class TestForeFlightParser:
         """Test parsing of valid XATT data."""
         line = "XATTAerofly FS 4,180.5,15.3,-5.7"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XATTData)
         assert data.sim_name == "Aerofly FS 4"
@@ -73,7 +73,7 @@ class TestForeFlightParser:
         """Test parsing XATT data with extreme but valid values."""
         line = "XATTSim,359.9,89.9,-89.9"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XATTData)
         assert abs(data.heading_deg - 359.9) < 0.01
@@ -84,26 +84,26 @@ class TestForeFlightParser:
         """Test parsing of invalid data format."""
         line = "INVALID_FORMAT"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, UnknownData)
-        assert data.raw_data == "INVALID_FORMAT"
+        assert data.raw_line == "INVALID_FORMAT"
         assert data.data_type == DataType.UNKNOWN
 
     def test_parse_empty_line(self, parser):
         """Test parsing of empty line."""
         line = ""
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, UnknownData)
-        assert data.raw_data == ""
+        assert data.raw_line == ""
 
     def test_parse_xgps_insufficient_fields(self, parser):
         """Test parsing XGPS with insufficient fields."""
         line = "XGPSAerofly FS 4,-122.345678,37.654321"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         # Should return UnknownData due to insufficient fields
         assert isinstance(data, UnknownData)
@@ -112,7 +112,7 @@ class TestForeFlightParser:
         """Test parsing XGPS with invalid number format."""
         line = "XGPSAerofly FS 4,invalid,37.654321,123.45,45.67,89.12"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         # Should return UnknownData due to invalid number
         assert isinstance(data, UnknownData)
@@ -121,7 +121,7 @@ class TestForeFlightParser:
         """Test parsing XATT with insufficient fields."""
         line = "XATTAerofly FS 4,180.5"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, UnknownData)
 
@@ -129,7 +129,7 @@ class TestForeFlightParser:
         """Test parsing XATT with invalid number format."""
         line = "XATTAerofly FS 4,invalid,15.3,-5.7"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, UnknownData)
 
@@ -141,7 +141,7 @@ class TestForeFlightParser:
             "INVALID",
         ]
 
-        results = [parser.parse(line) for line in lines]
+        results = [parser.parse_line(line) for line in lines]
 
         assert isinstance(results[0], XGPSData)
         assert isinstance(results[1], XATTData)
@@ -151,7 +151,7 @@ class TestForeFlightParser:
         """Test that whitespace in sim name is preserved."""
         line = "XGPSAerofly  FS  4,-122.345678,37.654321,123.45,45.67,89.12"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
 
         assert isinstance(data, XGPSData)
         # Sim name should preserve the extra spaces
@@ -161,11 +161,11 @@ class TestForeFlightParser:
         """Test that parsed XGPS data can be converted to dict."""
         line = "XGPSAerofly FS 4,-122.345678,37.654321,123.45,45.67,89.12"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
         data_dict = data.to_dict()
 
         assert isinstance(data_dict, dict)
-        assert data_dict['data_type'] == DataType.GPS.value
+        assert data_dict['type'] == DataType.GPS.value
         assert 'longitude' in data_dict
         assert 'latitude' in data_dict
         assert 'alt_msl_meters' in data_dict
@@ -174,11 +174,11 @@ class TestForeFlightParser:
         """Test that parsed XATT data can be converted to dict."""
         line = "XATTAerofly FS 4,180.5,15.3,-5.7"
 
-        data = parser.parse(line)
+        data = parser.parse_line(line)
         data_dict = data.to_dict()
 
         assert isinstance(data_dict, dict)
-        assert data_dict['data_type'] == DataType.ATTITUDE.value
+        assert data_dict['type'] == DataType.ATTITUDE.value
         assert 'heading_deg' in data_dict
         assert 'pitch_deg' in data_dict
         assert 'roll_deg' in data_dict
@@ -188,7 +188,7 @@ class TestForeFlightParser:
         line = "XGPSAerofly FS 4,-122.345678,37.654321,123.45,45.67,89.12"
 
         before = datetime.datetime.now(datetime.timezone.utc)
-        data = parser.parse(line)
+        data = parser.parse_line(line)
         after = datetime.datetime.now(datetime.timezone.utc)
 
         assert data.timestamp is not None
@@ -202,8 +202,8 @@ class TestForeFlightParser:
         # Both should work independently
         line = "XGPSTest,-122.0,37.0,100.0,45.0,25.0"
 
-        data1 = parser1.parse(line)
-        data2 = parser2.parse(line)
+        data1 = parser1.parse_line(line)
+        data2 = parser2.parse_line(line)
 
         assert isinstance(data1, XGPSData)
         assert isinstance(data2, XGPSData)
