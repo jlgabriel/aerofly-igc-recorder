@@ -1,0 +1,17 @@
+# Aerofly FS4 IGC Recorder - Dependencies
+# Python 3.8+
+
+# Core dependency for IGC file handling
+aerofiles>=1.0.0
+
+# Development dependencies (optional, for testing)
+# Uncomment these lines if you want to run tests
+# pytest>=7.0.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.0.0
+# pytest-mock>=3.10.0
+
+# Code quality tools (optional)
+# flake8>=6.0.0
+# black>=23.0.0
+# mypy>=1.0.0
