@@ -1,0 +1,16 @@
+# Development dependencies for Aerofly FS4 IGC Recorder
+# Install with: pip install -r requirements-dev.txt
+
+# Include production requirements
+-r requirements.txt
+
+# Testing framework
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+
+# Code quality tools
+flake8>=6.0.0
+black>=23.0.0
+mypy>=1.0.0

@@ -7,6 +7,7 @@ import logging
 import datetime
 import json
 import os
+import math
 from typing import Dict, Any, List, Optional, Tuple, Union
 from pathlib import Path
 import statistics
@@ -18,6 +19,41 @@ from ..io.files import get_file_info, get_igc_directory
 
 # Configure logger
 logger = logging.getLogger("aerofly_igc_recorder.core.flight")
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """
+    Calculate the great circle distance between two points on Earth.
+    Uses the haversine formula.
+
+    Args:
+        lat1: Latitude of first point in degrees
+        lon1: Longitude of first point in degrees
+        lat2: Latitude of second point in degrees
+        lon2: Longitude of second point in degrees
+
+    Returns:
+        float: Distance in kilometers
+    """
+    # Earth's radius in kilometers
+    R = 6371.0
+
+    # Convert degrees to radians
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    # Haversine formula
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
+
+    distance = R * c
+
+    return distance
 
 
 class FlightData:
@@ -77,16 +113,85 @@ class FlightData:
         try:
             # Get file info
             file_info = get_file_info(filename)
-            
-            # TODO: Implement IGC file parsing
-            # This would require reading and parsing the IGC file
-            # and populating the flight data properties
-            
-            # For now, just log that we're not implementing this yet
-            logger.info(f"Loading from IGC file not fully implemented yet: {filename}")
-            
+
             # Set basic properties from file info
             self.filename = filename
+
+            # Parse IGC file
+            logger.info(f"Loading flight data from IGC file: {filename}")
+
+            # Read and parse IGC file
+            with open(filename, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+
+                    # Parse B records (Fix records)
+                    # Format: B HHMMSS DDMMmmmN/S DDDMMmmmE/W A PPPPP GGGGG
+                    if line.startswith('B') and len(line) >= 35:
+                        try:
+                            # Extract time
+                            time_str = line[1:7]  # HHMMSS
+                            hours = int(time_str[0:2])
+                            minutes = int(time_str[2:4])
+                            seconds = int(time_str[4:6])
+
+                            # Extract latitude
+                            lat_deg = int(line[7:9])
+                            lat_min = int(line[9:11])
+                            lat_min_dec = int(line[11:14])
+                            lat_hem = line[14]
+                            latitude = lat_deg + (lat_min + lat_min_dec / 1000.0) / 60.0
+                            if lat_hem == 'S':
+                                latitude = -latitude
+
+                            # Extract longitude
+                            lon_deg = int(line[15:18])
+                            lon_min = int(line[18:20])
+                            lon_min_dec = int(line[20:23])
+                            lon_hem = line[23]
+                            longitude = lon_deg + (lon_min + lon_min_dec / 1000.0) / 60.0
+                            if lon_hem == 'W':
+                                longitude = -longitude
+
+                            # Extract altitude (pressure altitude)
+                            pressure_alt = int(line[25:30])
+
+                            # Extract GNSS altitude (if available)
+                            gnss_alt = int(line[30:35])
+
+                            # Use GNSS altitude if available, otherwise pressure altitude
+                            altitude = gnss_alt if gnss_alt > 0 else pressure_alt
+
+                            # Create position record
+                            # Note: We don't have speed/track from IGC, so set to 0
+                            position = XGPSData(
+                                sim_name="Loaded from IGC",
+                                longitude=longitude,
+                                latitude=latitude,
+                                alt_msl_meters=altitude,
+                                track_deg=0.0,
+                                ground_speed_mps=0.0,
+                                timestamp=None  # Will be set based on file date if needed
+                            )
+
+                            self.add_position(position)
+
+                        except (ValueError, IndexError) as e:
+                            logger.debug(f"Could not parse B record: {line[:20]}... - {e}")
+                            continue
+
+                    # Parse H records (Header records) for pilot info
+                    elif line.startswith('HFPLT'):
+                        # Pilot name
+                        self.pilot_name = line[5:].strip().replace('PILOT:', '').strip()
+                    elif line.startswith('HFGTY'):
+                        # Glider type
+                        self.glider_type = line[5:].strip().replace('GLIDERTYPE:', '').strip()
+                    elif line.startswith('HFGID'):
+                        # Glider ID
+                        self.glider_id = line[5:].strip().replace('GLIDERID:', '').strip()
+
+            logger.info(f"Loaded {len(self.positions)} positions from IGC file")
             
             # Parse creation time from filename if possible
             if 'filename' in file_info:
@@ -168,11 +273,21 @@ class FlightData:
             speeds = [pos.ground_speed_mps for pos in self.positions]
             self.max_speed_mps = max(speeds)
             self.avg_speed_mps = statistics.mean(speeds) if speeds else 0
-            
-            # TODO: Calculate distance traveled
-            # This requires calculating distances between consecutive points
-            # using the haversine formula
-            self.distance_km = 0.0  # Placeholder
+
+            # Calculate distance traveled using haversine formula
+            total_distance = 0.0
+            for i in range(len(self.positions) - 1):
+                pos1 = self.positions[i]
+                pos2 = self.positions[i + 1]
+
+                # Calculate distance between consecutive points
+                distance = haversine_distance(
+                    pos1.latitude, pos1.longitude,
+                    pos2.latitude, pos2.longitude
+                )
+                total_distance += distance
+
+            self.distance_km = total_distance
             
             # Mark statistics as calculated
             self._statistics_calculated = True
